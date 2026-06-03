@@ -38,6 +38,10 @@
   <img src="./profile/stats.svg" />
 </p>
 
+<p align="center">
+  <img src="./profile/top-langs.svg" />
+</p>
+
 ---
 
 ## 🌟 Featured Projects
