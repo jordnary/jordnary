@@ -17,12 +17,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Generate stats card
-        uses: soulteary/github-readme-stats-action@v1.0.0
-        with:
-          card: stats
-          options: 'username=${{ github.repository_owner }}&show_icons=true&theme=tokyonight&hide_border=true'
-          path: profile/stats.svg
-          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          PROFILE_OWNER: ${{ github.repository_owner }}
+        run: |
+          # The repository token cannot read user contribution data.
+          # Cache the public card in Git so outages do not break the README.
+          curl --fail --silent --show-error --location \
+            --retry 3 --connect-timeout 15 --max-time 60 \
+            "https://github-readme-stats-fast.vercel.app/api?username=${PROFILE_OWNER}&show_icons=true&theme=tokyonight&hide_border=true" \
+            --output profile/stats.svg
 
       - name: Generate top languages card
         uses: soulteary/github-readme-stats-action@v1.0.0
@@ -31,6 +34,28 @@ jobs:
           options: 'username=${{ github.repository_owner }}&layout=compact&theme=tokyonight&hide_border=true'
           path: profile/top-langs.svg
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate cards before committing
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          for name in ("stats.svg", "top-langs.svg"):
+              card = Path("profile") / name
+              content = card.read_text(encoding="utf-8")
+              root = ET.fromstring(content)
+              if root.tag != "{http://www.w3.org/2000/svg}svg":
+                  raise SystemExit(f"Invalid SVG: {card}")
+              if not any(node.tag == "{http://www.w3.org/2000/svg}text" for node in root.iter()):
+                  raise SystemExit(f"Missing card content: {card}")
+              if any(message in content.lower() for message in (
+                  "something went wrong", "resource not accessible", "forbidden",
+                  'data-testid="message"',
+              )):
+                  raise SystemExit(f"Error card rejected: {card}")
+              print(f"Validated {card}")
+          PY
 
       - name: Commit and push SVG files
         run: |
@@ -44,5 +69,5 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Update README stats cards"
+          git commit -m "chore: update README stats cards"
           git push

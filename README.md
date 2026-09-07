@@ -35,11 +35,11 @@
 ## 📊 GitHub Stats
 
 <p align="center">
-  <img src="./profile/stats.svg" />
+  <img src="./profile/stats.svg" alt="GitHub statistics" />
 </p>
 
 <p align="center">
-  <img src="./profile/top-langs.svg" />
+  <img src="./profile/top-langs.svg" alt="Most used programming languages" />
 </p>
 
 ---
